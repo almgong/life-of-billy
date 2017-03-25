@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Life of Billy</title>
+	</head>
+
+	<body>
+		<div style="width:800px; height:600px; border:1px solid black; margin: 25px auto" id="game-container">
+		</div>
+
+		<script src="/javascripts/phaser.min.js"></script>
+		<script type="text/javascript">
+
+
+			window.onload = function() {
+				console.log("window loaded.");
+
+				// TODO do setup code here
+
+				// anything we'd like to keep track of
+				var player;
+				var cursors;	// detects key input
+				var platforms;	// group of objects that can be stood on
+
+				// initialize the game object
+				var game = new Phaser.Game(800, 600, Phaser.AUTO, 'game-container', {
+					preload: preload,
+					create: create,
+					update: update
+				});
+
+				// preload any assets as needed, ideally we should preload
+				// only those things that will be used soon
+				function preload() {
+					game.load.image('tavern-bg', 'assets/Tavern800x600.png');
+					game.load.spritesheet('platform-temp', 'assets/Spritesheet/sprites_Tiles.png', 64, 64);
+					game.load.spritesheet('platform-temp2', 'assets/Spritesheet/sprites_Tiles.png', 16, 32, 10);
+					game.load.spritesheet('character', 'assets/gfx/character.png', 16, 32);
+				}
+
+				// adds initial elements to the screen, creates the initial scene
+				// elements have z-index depending on the order they are create()'d
+				function create() {
+					/// physics: total there are Arcade Physics, Ninja Physics and P2.JS Full-Body
+					game.physics.startSystem(Phaser.Physics.ARCADE);
+
+					// add background
+					game.add.sprite(0, 0, 'tavern-bg');
+
+					// add + init player
+					player = game.add.sprite(game.world.width - 90, game.world.height - 250, 'character');
+					game.physics.arcade.enable(player);
+					//player.scale.setTo(2,2);
+					player.body.bounce.y = 0.3;
+					player.body.gravity.y = 300;	// how fast character falls, affected by gravity
+					player.body.collideWorldBounds = true;
+
+					// register player animations with their frames (see sprite files)
+					// true means to loop the animation as the character is moving
+					player.animations.add('left', [51, 52, 53, 54], true);	
+					player.animations.add('right', [17,18,19,20], true);
+
+					// init cursors for key input
+					cursors = game.input.keyboard.createCursorKeys();
+
+					// GROUP: platforms, things that you can stand on
+					platforms = game.add.group();
+					platforms.enableBody = true;	// applies physics group-wise
+					var ground = platforms.create(0, game.world.height-64, 'platform-temp');
+					ground.scale.setTo(100, 2);	// scale to fit width
+					ground.body.immovable = true; // without this, player could push this around (good for scenario if something is running from you)
+
+					// TODO add more to platforms by calling platforms.create(...) or OUR HELPER!
+					createGenericPlatform(0, game.world.height-100, 'platform-temp2', true, [1, 2]);
+					createGenericPlatform(200, game.world.height-350, 'character', true, [5, 2]);
+				}
+
+				// gets called every frame
+				function update() {
+					player.body.velocity.x = 0;
+
+					// add movement
+					if (cursors.left.isDown) {
+						player.body.velocity.x = -100;
+						player.animations.play('left');
+					} else if (cursors.right.isDown) {
+						player.body.velocity.x = 100;
+						player.animations.play('right');
+					} else {
+						// means nothing is pressed, so stop movement and reset frame
+						player.animations.stop();
+						player.frame = 1;
+					}
+
+					// need to make a platform or something
+					var hitPlatform = game.physics.arcade.collide(player, platforms);
+					if (cursors.up.isDown && player.body.touching.down && hitPlatform) {
+						player.body.velocity.y = -150;
+					}
+				}
+
+				// helpers
+
+				/**
+				 * Creates a generic platform at x and y, with assetName. immovable is a boolean
+				 * value denoting whether the platform should be immovable. scaleToVec
+				 * is optional, and if supplied should be a 2 element array with the
+				 * desired scaleTo values.
+				**/
+				function createGenericPlatform(x, y, assetName, immovable, scaleToVec) {
+					if (platforms) {
+						var platform = platforms.create(x, y, assetName);
+
+						if (immovable) {
+							platform.body.immovable = immovable;
+						}
+
+						if (scaleToVec && scaleToVec.length && scaleToVec.length ==2) {
+							platform.scale.setTo(scaleToVec[0], scaleToVec[1]);
+						}
+					}
+				}
+			}
+		</script>
+	</body>
+</html>
