@@ -1,0 +1,1 @@
+each monster has 3 damage frames, for when you hit them
